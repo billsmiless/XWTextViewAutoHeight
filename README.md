@@ -10,7 +10,7 @@
 
 2. 导入 #import "UITextView+XWAutoHeight.h" 头文件到你所需要用的textview所在的文件
 
-3. 使用textview实例调用，调用开启自动改变高度方法，如下：
+3. 使用textview实例，调用开启自动改变高度方法，如下：
 - (void)autoChangeHeightWithBlock:(XWChangeHeightBlock)changeHeightBlock;
 这个方法只能调用一次，调用多次的话，只有第一次的生效。
 
