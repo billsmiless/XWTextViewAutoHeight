@@ -24,13 +24,14 @@
     CGFloat ix = 20;
     textView.frame = CGRectMake(ix, 100, CGRectGetWidth(self.view.frame)-2*ix, 30);
     textView.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1];
+    textView.font = [UIFont systemFontOfSize:17];
     [textView becomeFirstResponder];
     [self.view addSubview:textView];
     
-    
-    [textView autoChangeHeightWithBlock:^(CGFloat height) {
-        NSLog(@"高度改变了");
+    [textView autoChangeWithMinHeight:0 maxHeight:0 changeBlock:^(CGFloat height){
+        NSLog(@"高度变化了=%f",height);
     }];
+
 }
 
 

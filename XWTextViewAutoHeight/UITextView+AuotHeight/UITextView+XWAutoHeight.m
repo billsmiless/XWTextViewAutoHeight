@@ -10,26 +10,53 @@
 
 @implementation UITextView (XWAutoHeight)
 
-- (void)autoChangeHeightWithBlock:(XWChangeHeightBlock)changeHeightBlock{
-    [self registerForKVOWithContext:(__bridge void * _Nullable)(changeHeightBlock)];
+- (void)autoChangeWithMinHeight:(CGFloat)minHeight maxHeight:(CGFloat)maxHeight changeBlock:(XWChangeHeightBlock)changeHeightBlock{
+
+    [self saveMaxHeight:maxHeight minHeight:minHeight];
+    [self registerForKVOWithContext:(__bridge void *)(changeHeightBlock)];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context{
     
     if( ![object isKindOfClass:[UITextView class]] ) return;
-    
     if( ![change isKindOfClass:[NSDictionary class]] ) return;
     
     NSValue *sizeValue = change[@"new"];
-    
     if( ![sizeValue isKindOfClass:[NSValue class]] ) return;
     
-    CGRect fr = self.frame;
-    fr.size.height = sizeValue.CGSizeValue.height;
-    self.frame = fr;
-    
     if( context ){
-        XWChangeHeightBlock callback = (__bridge XWChangeHeightBlock)context;
+        
+        CGRect fr = self.frame;
+        CGFloat maxHeight = 0, minHeight = 0;
+        [self getMaxHeight:&maxHeight minHeight:&minHeight];
+        
+        CGFloat newHeight = sizeValue.CGSizeValue.height;
+        
+        CGFloat zeroValue = 0.000001;
+        
+        //若最大高度不为0，则比较最大高度
+        if( maxHeight > zeroValue ){
+            if( newHeight > maxHeight ){
+                newHeight = maxHeight;
+            }
+        }
+        
+        //若最小高度不为0，则设置最小高度
+        if( minHeight > zeroValue ){
+            if( newHeight < minHeight ){
+                newHeight = minHeight;
+            }
+        }
+        
+        //若textview的高度与新的高度一致，则不改变高度也不回调
+        if( ABS(fr.size.height - newHeight) < zeroValue){
+            return;
+        }
+        
+        fr.size.height = newHeight;
+        self.frame = fr;
+        
+        XWChangeHeightBlock callback = (__bridge XWChangeHeightBlock)(context);
         callback(fr.size.height);
     }
 }
@@ -37,6 +64,9 @@
 - (void)dealloc{
     //移除观察者
     [self unregisterFromKVO];
+    
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:self.markKey];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:self.maxAndMinHeightKey];
 }
 
 #pragma mark - Private
@@ -46,10 +76,34 @@
 }
 
 - (NSString*)markKey{
-    NSString *key = [NSString stringWithFormat:@"%p",(&self)];
+    NSString *key = [NSString stringWithFormat:@"%p",(self)];
     return key;
 }
 
+- (NSString*)maxAndMinHeightKey{
+    return [[self markKey] stringByAppendingString:@"maxHeightKey"];
+}
+   
+- (void)saveMaxHeight:(CGFloat)maxHeight minHeight:(CGFloat)minHeight{
+
+    [[NSUserDefaults standardUserDefaults] setObject:@[@(maxHeight),@(minHeight)] forKey:[self maxAndMinHeightKey]];
+}
+
+- (void)getMaxHeight:(CGFloat*)maxHeight minHeight:(CGFloat*)minHeight{
+    NSArray *arr =
+    [[NSUserDefaults standardUserDefaults] objectForKey:[self maxAndMinHeightKey]];
+    if( arr && [arr isKindOfClass:[NSArray class]] ){
+        if( arr.count == 2 ){
+            NSNumber *num = (NSNumber*)arr[0];
+            *maxHeight = num.floatValue;
+            
+            num = (NSNumber*)arr[1];
+            *minHeight = num.floatValue;
+        }
+    }
+}
+
+#pragma mark - 注册和移除KVO
 - (void)registerForKVOWithContext:(void*)context {
     
     //若已经添加过KVO，则不再添加

@@ -22,10 +22,12 @@ typedef void(^XWChangeHeightBlock)(CGFloat height);
 
 /**
  开启自动改变高度
-
+ 
+ @param minHeight 最小高度，传0为文字的最小高度
+ @param maxHeight 最大高度，传0为不限制高度
  @param changeHeightBlock textview高度改变的回调
  */
-- (void)autoChangeHeightWithBlock:(XWChangeHeightBlock)changeHeightBlock;
+- (void)autoChangeWithMinHeight:(CGFloat)minHeight maxHeight:(CGFloat)maxHeight changeBlock:(XWChangeHeightBlock)changeHeightBlock;
 
 @end
 
